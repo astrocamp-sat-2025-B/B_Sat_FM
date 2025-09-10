@@ -192,12 +192,12 @@ int main()
     // Enable wifi station
     cyw43_arch_enable_sta_mode();
 
-    printf("Connecting to Wi-Fi...\n");
-    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-    while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("Failed to connect. Retrying in 5 seconds...\n");
-        sleep_ms(5000); // 5秒待機
-    }
+    //printf("Connecting to Wi-Fi...\n");
+    //cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+    //while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+    //    printf("Failed to connect. Retrying in 5 seconds...\n");
+    //    sleep_ms(5000); // 5秒待機
+    //}
     
     // 接続成功時の処理
     printf("Connected.\n");
@@ -219,17 +219,55 @@ int main()
         // printf("Hello, world!\n");
         // sleep_ms(1000);
 
-        pwm_set_chan_level(slice_num, channel,700);  
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-        sleep_ms(2000);
-        pwm_set_chan_level(slice_num, channel,2300);  
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-        sleep_ms(200);
-        pwm_set_chan_level(slice_num, channel,1400);  
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-        sleep_ms(50);
-        pwm_set_chan_level(slice_num, channel,1500);  
-        sleep_ms(1000);
+        if (light_deg() >= -180 && light_deg() <= -135) {
+            pwm_set_chan_level(slice_num, channel,2000);
+            printf("2000\n");
+        } 
+        if (light_deg() >= -134 && light_deg() <= -90) {
+            pwm_set_chan_level(slice_num, channel,2300);
+            printf("2300\n");
+        }
+        if (light_deg() >= -89 && light_deg() <= -45) {
+            pwm_set_chan_level(slice_num, channel,700);
+            printf("700\n");
+        }
+        if (light_deg() >= -44 && light_deg() <= 0) {
+            pwm_set_chan_level(slice_num, channel,1000);
+            printf("1000\n");
+        }
+        if (light_deg() >= 1 && light_deg() <= 45) {
+            pwm_set_chan_level(slice_num, channel,1200);
+            printf("1200\n");
+        }
+        if (light_deg() >= 46 && light_deg() <= 69) {
+            pwm_set_chan_level(slice_num, channel,1400);
+            printf("1400\n");
+        }
+        if (light_deg() >= 70 && light_deg() <= 110) {
+            pwm_set_chan_level(slice_num, channel,1500);
+            printf("1500\n");
+        }
+        if (light_deg() >= 111 && light_deg() <= 135) {
+            pwm_set_chan_level(slice_num, channel,1650);
+            printf("1650\n");
+        }
+        if (light_deg() >= 136 && light_deg() <= 180) {
+            pwm_set_chan_level(slice_num, channel,1800);
+            printf("1800\n");
+        }
+
+
+        //pwm_set_chan_level(slice_num, channel,2300);  
+        //cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        //sleep_ms(1100);
+        //pwm_set_chan_level(slice_num, channel,700);  
+        //cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+        //sleep_ms(200);
+        //pwm_set_chan_level(slice_num, channel,1600);  
+        //cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        //sleep_ms(50);
+        //pwm_set_chan_level(slice_num, channel,1500);  
+        // sleep_ms(1000);
 
         // for (uint16_t pulse = 700; pulse <= 2300; pulse += 1) {
         //     uint16_t level = pulse;
@@ -239,7 +277,7 @@ int main()
         // }
 
         // print_ch_data();
-        light_deg();
+        //printf("lv=%f\n",light_deg());
 
     }
 }
