@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
@@ -53,6 +54,83 @@ const uint PWM_PIN = 11;
 #define PWM_DIVIDER 125.0f
 #define WRAP ((clock_get_hz(clk_sys) / PWM_DIVIDER) / PWM_FREQ)
 
+// add features
+#define MCP3008_START_BIT 0b00000001
+#define MCP3008_MODE_SINGLE 0b10000000    // Single-ended mode
+#define _DEBUG_MCP3008 false
+
+#define PI 3.14
+const float unitVectorX[4] = {0.707, -0.707, -0.707, 0.707};
+const float unitVectorY[4] = {-0.707, -0.707, 0.707, 0.707};
+
+static float Vref = 3.2562;
+
+static inline void cs_select()
+{
+  asm volatile("nop \n nop \n nop");
+  gpio_put(PIN_CS, 0);  // Active low
+  asm volatile("nop \n nop \n nop");
+}
+
+static inline void cs_deselect()
+{
+    asm volatile("nop \n nop \n nop");
+    gpio_put(PIN_CS, 1);
+    asm volatile("nop \n nop \n nop");
+}
+
+int readADC(uint8_t ch)
+{
+    uint8_t writeData[3] = {};
+    uint8_t buffer[3] = {};
+    writeData[0] = MCP3008_START_BIT;
+    writeData[1] = MCP3008_MODE_SINGLE | (ch << 4);
+#if _DEBUG_MCP3008
+    printf("\n %08b %08b %08b\n",writeData[0],writeData[1],writeData[2]);
+#endif
+    cs_select();
+    sleep_ms(1);
+    spi_write_read_blocking(SPI_PORT, writeData, buffer, 3);
+    sleep_ms(1);
+    cs_deselect();
+
+    return (buffer[1] & 0b00000011) << 8 | buffer[2];
+}
+
+float light_deg()
+{
+    uint8_t raw_data[4] = {};
+    float V_x = 0;
+    float V_y = 0;
+    float deg = 0;
+    for(int i = 0; i < 4; i++)
+    {
+		raw_data[i] = readADC(i);
+	}
+  
+    for(int i = 0; i < 4; i++) {
+        V_x += raw_data[i] * unitVectorX[i];
+        V_y += raw_data[i] * unitVectorY[i];
+    }
+    
+    deg = atan2(V_y, V_x) / PI * 180.0 ;
+    printf("deg=%f\n",deg);
+    
+    return deg;
+}
+
+void print_ch_data()
+{
+    for (uint8_t i=0; i<8; i++)
+  {
+    printf("%.4f",Vref * readADC(i) / 1024);
+    if (i < 7)
+      {
+        printf(",");
+      }
+  }
+  printf(" \n");
+}
 
 int main()
 {
@@ -115,6 +193,7 @@ int main()
     cyw43_arch_enable_sta_mode();
 
     printf("Connecting to Wi-Fi...\n");
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
     while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
         printf("Failed to connect. Retrying in 5 seconds...\n");
         sleep_ms(5000); // 5秒待機
@@ -122,6 +201,7 @@ int main()
     
     // 接続成功時の処理
     printf("Connected.\n");
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
 
     // initialize the PWM hardware
     gpio_set_function(PWM_PIN, GPIO_FUNC_PWM);
@@ -130,34 +210,36 @@ int main()
     pwm_set_clkdiv(slice_num, PWM_DIVIDER); //ここのあたりを理解
     pwm_set_wrap(slice_num, WRAP);
     pwm_set_enabled(slice_num, true);
+    printf("wrap=%f\n", WRAP);
 
 
     
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
-
     while (true) {
-        printf("Hello, world!\n");
+        // printf("Hello, world!\n");
+        // sleep_ms(1000);
+
+        pwm_set_chan_level(slice_num, channel,700);  
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        sleep_ms(2000);
+        pwm_set_chan_level(slice_num, channel,2300);  
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+        sleep_ms(200);
+        pwm_set_chan_level(slice_num, channel,1400);  
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        sleep_ms(50);
+        pwm_set_chan_level(slice_num, channel,1500);  
         sleep_ms(1000);
-                
-        uart_puts(UART_ID, "Loop!\n");
 
-        //printf("wrap=%f\n", WRAP);
-        //pwm_set_chan_level(slice_num, channel,700);  //CW(
-        //sleep_ms(1000);
-        //pwm_set_chan_level(slice_num, channel,1500); //stop
-        //sleep_ms(100);
-        //pwm_set_chan_level(slice_num, channel,2300); //CCW
-        //sleep_ms(1000);
-        //pwm_set_chan_level(slice_num, channel,1500); //stop
-        //sleep_ms(1000);
-        for (uint16_t pulse = 700; pulse <= 2300; pulse += 1) {
-            uint16_t level = pulse;
-            printf("pulse=%d level=%d\n", pulse, level);
-            pwm_set_chan_level(slice_num, channel, level);
-            sleep_ms(10);
-        }
+        // for (uint16_t pulse = 700; pulse <= 2300; pulse += 1) {
+        //     uint16_t level = pulse;
+        //     printf("pulse=%d level=%d\n", pulse, level);
+        //     pwm_set_chan_level(slice_num, channel, level);
+        //     sleep_ms(10);
+        // }
 
-        uart_puts(UART_ID, "Looping...\n");
-        printf("\n");
+        // print_ch_data();
+        light_deg();
+
     }
 }
