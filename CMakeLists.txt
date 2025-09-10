@@ -64,6 +64,7 @@ target_link_libraries(b_sat_fm
         hardware_interp
         hardware_timer
         pico_cyw43_arch_lwip_poll
+        hardware_pwm
         )
 
 pico_add_extra_outputs(b_sat_fm)

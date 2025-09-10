@@ -7,6 +7,8 @@
 #include "hardware/timer.h"
 #include "pico/cyw43_arch.h"
 #include "hardware/uart.h"
+#include "hardware/pwm.h"
+#include "hardware/clocks.h"
 
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
@@ -42,6 +44,14 @@ int64_t alarm_callback(alarm_id_t id, void *user_data) {
 #define UART_TX_PIN 12
 #define UART_RX_PIN 13
 
+// servo Defines
+const uint PWM_PIN = 11;
+// const uint16_t STOP_PULSE_US = 1500; // 規定値　1500us
+// const uint16_t CW_PULSE_US   = 1200; // 規定値　1500-700
+// const uint16_t CCW_PULSE_US  = 1800; // 規定値　1500-2300
+#define PWM_FREQ 400
+#define PWM_DIVIDER 125.0f
+#define WRAP ((clock_get_hz(clk_sys) / PWM_DIVIDER) / PWM_FREQ)
 
 
 int main()
@@ -51,7 +61,6 @@ int main()
     // Initialise the Wi-Fi chip
     if (cyw43_arch_init()) {
         printf("Wi-Fi init failed\n");
-        return -1;
     }
 
     // Set up our UART
@@ -106,15 +115,21 @@ int main()
     cyw43_arch_enable_sta_mode();
 
     printf("Connecting to Wi-Fi...\n");
-    if (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("failed to connect.\n");
-        return 1;
-    } else {
-        printf("Connected.\n");
-        // Read the ip address in a human readable way
-        uint8_t *ip_address = (uint8_t*)&(cyw43_state.netif[0].ip_addr.addr);
-        printf("IP address %d.%d.%d.%d\n", ip_address[0], ip_address[1], ip_address[2], ip_address[3]);
+    while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+        printf("Failed to connect. Retrying in 5 seconds...\n");
+        sleep_ms(5000); // 5秒待機
     }
+    
+    // 接続成功時の処理
+    printf("Connected.\n");
+
+    // initialize the PWM hardware
+    gpio_set_function(PWM_PIN, GPIO_FUNC_PWM);
+    uint slice_num = pwm_gpio_to_slice_num(PWM_PIN);
+    uint channel = pwm_gpio_to_channel(PWM_PIN);
+    pwm_set_clkdiv(slice_num, PWM_DIVIDER); //ここのあたりを理解
+    pwm_set_wrap(slice_num, WRAP);
+    pwm_set_enabled(slice_num, true);
 
 
     
@@ -123,5 +138,26 @@ int main()
     while (true) {
         printf("Hello, world!\n");
         sleep_ms(1000);
+                
+        uart_puts(UART_ID, "Loop!\n");
+
+        //printf("wrap=%f\n", WRAP);
+        //pwm_set_chan_level(slice_num, channel,700);  //CW(
+        //sleep_ms(1000);
+        //pwm_set_chan_level(slice_num, channel,1500); //stop
+        //sleep_ms(100);
+        //pwm_set_chan_level(slice_num, channel,2300); //CCW
+        //sleep_ms(1000);
+        //pwm_set_chan_level(slice_num, channel,1500); //stop
+        //sleep_ms(1000);
+        for (uint16_t pulse = 700; pulse <= 2300; pulse += 1) {
+            uint16_t level = pulse;
+            printf("pulse=%d level=%d\n", pulse, level);
+            pwm_set_chan_level(slice_num, channel, level);
+            sleep_ms(10);
+        }
+
+        uart_puts(UART_ID, "Looping...\n");
+        printf("\n");
     }
 }
