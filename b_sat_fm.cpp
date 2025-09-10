@@ -220,39 +220,42 @@ int main()
         // sleep_ms(1000);
 
         if (light_deg() >= -180 && light_deg() <= -135) {
-            pwm_set_chan_level(slice_num, channel,2000);
+            pwm_set_chan_level(slice_num, channel,1800);
             printf("2000\n");
         } 
         if (light_deg() >= -134 && light_deg() <= -90) {
-            pwm_set_chan_level(slice_num, channel,2300);
+            pwm_set_chan_level(slice_num, channel,1800);
             printf("2300\n");
         }
         if (light_deg() >= -89 && light_deg() <= -45) {
-            pwm_set_chan_level(slice_num, channel,700);
+            pwm_set_chan_level(slice_num, channel,1200);
             printf("700\n");
         }
         if (light_deg() >= -44 && light_deg() <= 0) {
-            pwm_set_chan_level(slice_num, channel,1000);
+            pwm_set_chan_level(slice_num, channel,1200);
             printf("1000\n");
         }
         if (light_deg() >= 1 && light_deg() <= 45) {
-            pwm_set_chan_level(slice_num, channel,1200);
+            pwm_set_chan_level(slice_num, channel,1400);
             printf("1200\n");
         }
         if (light_deg() >= 46 && light_deg() <= 69) {
-            pwm_set_chan_level(slice_num, channel,1400);
+            pwm_set_chan_level(slice_num, channel,1400);//1400
             printf("1400\n");
         }
         if (light_deg() >= 70 && light_deg() <= 110) {
+            
+            pwm_set_chan_level(slice_num, channel,1700);  
+            pwm_set_chan_level(slice_num, channel,1300);  
             pwm_set_chan_level(slice_num, channel,1500);
             printf("1500\n");
         }
         if (light_deg() >= 111 && light_deg() <= 135) {
-            pwm_set_chan_level(slice_num, channel,1650);
+            pwm_set_chan_level(slice_num, channel,1600);//1650
             printf("1650\n");
         }
         if (light_deg() >= 136 && light_deg() <= 180) {
-            pwm_set_chan_level(slice_num, channel,1800);
+            pwm_set_chan_level(slice_num, channel,1600);
             printf("1800\n");
         }
 
