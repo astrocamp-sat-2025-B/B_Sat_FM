@@ -35,7 +35,9 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(b_sat_fm b_sat_fm.cpp )
+add_executable(b_sat_fm
+ b_sat_fm.cpp
+ adc.cpp )
 
 pico_set_program_name(b_sat_fm "b_sat_fm")
 pico_set_program_version(b_sat_fm "0.1")
