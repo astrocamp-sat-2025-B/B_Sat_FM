@@ -2,8 +2,8 @@
 #include "adc.h"
 
 // グローバル変数の定義
-const float unitVectorX[4] = {0.707, -0.707, -0.707, 0.707};
-const float unitVectorY[4] = {-0.707, -0.707, 0.707, 0.707};
+const float unitVectorY[4] = {0.707, -0.707, -0.707, 0.707};
+const float unitVectorX[4] = {-0.707, -0.707, 0.707, 0.707};
 float Vref = 3.2562;
 
 static inline void cs_select() {
