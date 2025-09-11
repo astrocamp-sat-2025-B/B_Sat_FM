@@ -30,6 +30,9 @@ include(pico_sdk_import.cmake)
 
 project(b_sat_fm C CXX ASM)
 
+set(WIFI_SSID "SPWH_L12_5b414e")
+set(WIFI_PASSWORD "0f15b502ac61d")
+
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
@@ -39,7 +42,10 @@ add_executable(b_sat_fm
  b_sat_fm.cpp
  adc.cpp
  camera.cpp
- )
+ b_sat_fm.cpp
+ adc.cpp 
+ tcp_sever.cpp
+)
 
 pico_set_program_name(b_sat_fm "b_sat_fm")
 pico_set_program_version(b_sat_fm "0.1")
@@ -54,6 +60,11 @@ pico_enable_stdio_usb(b_sat_fm 1)
 # Add the standard library to the build
 target_link_libraries(b_sat_fm
         pico_stdlib)
+
+target_compile_definitions(b_sat_fm PRIVATE
+        WIFI_SSID=\"${WIFI_SSID}\"
+        WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
+        )
 
 # Add the standard include files to the build
 target_include_directories(b_sat_fm PRIVATE
