@@ -209,7 +209,7 @@ int main()
 
     sleep_ms(1000);
 
-    capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
+    // capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
 
     run_echo_server(&slice_num, &channel, -125);
 
