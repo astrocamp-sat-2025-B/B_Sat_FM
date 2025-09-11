@@ -111,6 +111,9 @@ int main()
         return 1;
     }
 
+    init_i2c();
+    init_camera_settings();
+
     // Set up our UART
     uart_init(UART_ID, BAUD_RATE);
     // Set the TX and RX pins by using the function select on the GPIO
@@ -182,11 +185,13 @@ int main()
     pwm_set_enabled(slice_num, true);
     printf("wrap=%f\n", WRAP);
 
+    capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
 
+    run_echo_server();
 
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
     while (true) {
-        update_servo_from_light_deg(90, slice_num, channel);
+        // update_servo_from_light_deg(90, slice_num, channel);
 
 
 
@@ -209,8 +214,8 @@ int main()
        //      sleep_ms(10);
        //  }
 
-         print_ch_data();
-        printf("lv=%f\n",light_deg());
+        //  print_ch_data();
+        // printf("lv=%f\n",light_deg());
         //test_pwm(slice_num, channel);
         //sleep_ms(1000);
 

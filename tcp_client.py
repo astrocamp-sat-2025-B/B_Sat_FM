@@ -2,43 +2,65 @@ import socket
 
 # --- 設定項目 ---
 # Pico WのIPアドレスに書き換えてください
-# (IPアドレスはPico W起動時のシリアルモニター出力で確認できます)
 SERVER_IP = "192.168.179.43"
 
-# サーバーのポート番号 (tcp_sever.cppで定義されているもの)
-SERVER_PORT = 4242  #
+# サーバーのポート番号
+SERVER_PORT = 4242
 
-# 送信するメッセージ
-PAYLOAD = "hello world"
+# 送信するコマンド ('g' = get image data)
+PAYLOAD = "g"
+
+# 受信する画像の1行のバイト数 (camera.h の FRAME_WIDTH と一致させる)
+# YUYVフォーマットで横320ピクセルなので、320ピクセル * 2バイト/ピクセル = 640 バイト
+LINE_WIDTH_BYTES = 640
 # --- 設定ここまで ---
 
 
 def run_tcp_client():
     """
-    指定されたIPアドレスとポートに接続し、メッセージを送信して応答を受信するTCPクライアント。
+    サーバーに画像取得コマンドを送信し、1行分の画像データをバイナリで受信するクライアント。
     """
     print(f"サーバー {SERVER_IP}:{SERVER_PORT} への接続を試みます...")
 
-    # withステートメントでソケットの自動クローズを保証
-    # socket.AF_INET: IPv4を使用
-    # socket.SOCK_STREAM: TCP通信を使用
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # サーバーに接続
             s.connect((SERVER_IP, SERVER_PORT))
             print("サーバーに接続しました。")
 
-            # メッセージをutf-8形式のバイト列にエンコードして送信
-            print(f"メッセージを送信: {PAYLOAD}")
+            # 画像取得コマンドをutf-8形式のバイト列にエンコードして送信
+            print(f"画像取得コマンドを送信: '{PAYLOAD}'")
             s.sendall(PAYLOAD.encode("utf-8"))
 
-            # サーバーからの応答を受信 (最大1024バイト)
-            # Pico Wのサーバーは受信したデータをそのままエコーバックする
-            response_data = s.recv(1024)
+            # --- バイナリデータ受信処理 ---
+            print(f"{LINE_WIDTH_BYTES} バイトの画像データを受信します...")
 
-            # 受信したバイト列を文字列にデコードして表示
-            print(f"サーバーからの応答: {response_data.decode('utf-8').strip()}")
-            print("接続を終了します。")
+            chunks = []
+            bytes_received = 0
+            # 期待するバイト数を受信するまでループで待機
+            while bytes_received < LINE_WIDTH_BYTES:
+                # 一度に受信する最大サイズを指定 (2048など大きめの値でOK)
+                chunk = s.recv(min(LINE_WIDTH_BYTES - bytes_received, 2048))
+                if not chunk:
+                    # サーバーがデータを送り切る前に接続を閉じた場合
+                    raise RuntimeError("サーバーとの接続が予期せず切れました")
+
+                chunks.append(chunk)
+                bytes_received += len(chunk)
+                print(f"受信済み: {bytes_received} / {LINE_WIDTH_BYTES} バイト")
+
+            # 受信したチャンク（断片）を結合して1つのバイト列にする
+            image_data = b"".join(chunks)
+
+            print("\n受信完了。")
+            print(f"受信データ長: {len(image_data)} バイト")
+
+            # 受信したデータを16進数で表示 (長すぎるので先頭と末尾の一部のみ)
+            hex_representation = image_data.hex(" ")
+            print(f"受信データ (16進数, 先頭32バイト): {hex_representation[:32*3]}...")
+            print(f"受信データ (16進数, 末尾32バイト): ...{hex_representation[-32*3:]}")
+
+            print("\n接続を終了します。")
 
     except ConnectionRefusedError:
         print(

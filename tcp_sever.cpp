@@ -1,4 +1,5 @@
 #include "tcp_sever.h"
+#include "camera.h"
 
 #define TCP_PORT 4242
 #define DEBUG_printf printf
@@ -63,26 +64,45 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
     
     cyw43_arch_lwip_check();
 
+
     if (p->tot_len > 0) {
-        char data = ((char*)p->payload)[0];
-        DEBUG_printf("Received cmd: %c\n", data);
+        // 受信したペイロードの先頭1バイトをコマンドとして解釈
+        char cmd = ((char*)p->payload)[0];
+        DEBUG_printf("Received cmd: '%c'\n", cmd);
 
-        if (data == 's'|| data == 'g' || data == 't')
-        {
-            state->command = data;
-        }
+        // 'g' (get) コマンドを受信したら画像データを送信
+        if (cmd == 'g') {
+            DEBUG_printf("Sending first line of frame_buffer (%d bytes)...\n", FRAME_WIDTH);
+            
+            // frame_bufferの1行目を送信
+            // tcp_writeはバッファがいっぱいだと送信できない場合があるため、エラーチェックが重要
+            err_t write_err = tcp_write(tpcb, &frame_buffer[0], FRAME_WIDTH, TCP_WRITE_FLAG_COPY);
+            if (write_err != ERR_OK) {
+                DEBUG_printf("Failed to write frame data, error: %d\n", write_err);
+                return tcp_server_result(arg, -1);
+            }
+            // デバッグ目的として、frame_bufferの最初の16バイトを16進数で表示
+            DEBUG_printf("Frame data (first 16 bytes): ");
+            for (int i = 0; i < 16 && i < FRAME_WIDTH; i++) {
+                    DEBUG_printf("%02X ", frame_buffer[i]);
+            }
+            DEBUG_printf("\n");
 
-        err_t write_err = tcp_write(tpcb, p->payload, p->tot_len, TCP_WRITE_FLAG_COPY);
-        if (write_err != ERR_OK) {
-            DEBUG_printf("Failed to write data for echo, error: %d\n", write_err);
-            return tcp_server_result(arg, -1);
-        }
+            // TCP送信バッファの内容をすぐに送信するよう指示
+            tcp_output(tpcb);
 
-        // 改行文字を送信
-        write_err = tcp_write(tpcb, "\n", 1, TCP_WRITE_FLAG_COPY);
-        if (write_err != ERR_OK) {
-            DEBUG_printf("Failed to write newline, error: %d\n", write_err);
-            return tcp_server_result(arg, -1);
+        } else {
+            // 's' や 't' などのコマンドの場合は state に保存し、エコーバックする
+            if (cmd == 's' || cmd == 't') {
+                state->command = cmd;
+            }
+            
+            DEBUG_printf("Echoing back received data.\n");
+            err_t write_err = tcp_write(tpcb, p->payload, p->tot_len, TCP_WRITE_FLAG_COPY);
+            if (write_err != ERR_OK) {
+                DEBUG_printf("Failed to write data for echo, error: %d\n", write_err);
+                return tcp_server_result(arg, -1);
+            }
         }
     }
 
