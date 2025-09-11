@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
@@ -12,6 +13,7 @@
 #include "hardware/clocks.h"
 
 #include "adc.h"
+#include "tcp_sever.h"
 
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
@@ -61,9 +63,9 @@ int main()
 {
     stdio_init_all();
 
-    // Initialise the Wi-Fi chip
     if (cyw43_arch_init()) {
-        printf("Wi-Fi init failed\n");
+        printf("failed to initialise\n");
+        return 1;
     }
 
     // Set up our UART
@@ -116,16 +118,16 @@ int main()
 
     // Enable wifi station
     cyw43_arch_enable_sta_mode();
-
     printf("Connecting to Wi-Fi...\n");
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-    while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+    while (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) 
+    {
         printf("Failed to connect. Retrying in 5 seconds...\n");
         sleep_ms(5000); 
-    }
-    
+    } 
     // 接続成功時の処理
     printf("Connected.\n");
+
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
 
     // initialize the PWM hardware
@@ -143,6 +145,8 @@ int main()
     while (true) {
         // printf("Hello, world!\n");
         // sleep_ms(1000);
+
+        run_echo_server();
 
         if (light_deg() >= -180 && light_deg() <= -135) {
             pwm_set_chan_level(slice_num, channel,1800);
