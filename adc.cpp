@@ -48,8 +48,7 @@ float light_deg() {
         V_y += raw_data[i] * unitVectorY[i];
     }
     
-    // deg = atan2(V_y, V_x) / PI * 180.0;
-    deg = 55.5;
+    deg = atan2(V_y, V_x) / PI * 180.0;
     printf("deg=%f\n", deg);
     
     return deg;
