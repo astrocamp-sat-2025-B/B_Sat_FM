@@ -49,7 +49,7 @@ float light_deg() {
     }
     
     deg = atan2(V_y, V_x) / PI * 180.0;
-    printf("deg=%f\n", deg);
+    // printf("deg=%f\n", deg);
     
     return deg;
 }
