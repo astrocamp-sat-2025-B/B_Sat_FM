@@ -95,7 +95,7 @@ void update_servo_from_light_deg(float deg, int slice_num, int channel) {
             printf("1500\n");
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
             counter++;
-            if (counter > 100) {
+            if (counter > 1000) {
                 break;
             }
         }
@@ -205,9 +205,7 @@ int main()
     pwm_set_enabled(slice_num, true);
     printf("wrap=%f\n", WRAP);
 
-    update_servo_from_light_deg(-125, slice_num, channel);
-
-    sleep_ms(1000);
+    // update_servo_from_light_deg(-125, slice_num, channel);
 
     capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
 

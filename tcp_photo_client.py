@@ -3,7 +3,7 @@ import socket
 # --- 設定項目 ---
 # Pico WのIPアドレスに書き換えてください
 # SERVER_IP = "192.168.179.43"
-SERVER_IP = "192.168.137.184"
+SERVER_IP = "192.168.179.43"
 
 # サーバーのポート番号
 SERVER_PORT = 4242

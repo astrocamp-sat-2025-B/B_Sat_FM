@@ -5,6 +5,10 @@
 #define TCP_PORT 4242
 #define DEBUG_printf printf
 
+// 関数のプロトタイプ宣言
+static err_t tcp_send_chunk(void *arg, struct tcp_pcb *tpcb);
+static err_t tcp_server_sent(void *arg, struct tcp_pcb *tpcb, u16_t len);
+
 static TCP_SERVER_T* tcp_server_init(void) {
     TCP_SERVER_T *state = (TCP_SERVER_T*)calloc(1, sizeof(TCP_SERVER_T));
     if (!state) {
@@ -12,6 +16,9 @@ static TCP_SERVER_T* tcp_server_init(void) {
         return NULL;
     }
     state->command = 0;
+    state->send_buffer_ptr = NULL;
+    state->send_buffer_len = 0;
+    state->send_buffer_pos = 0;
     return state;
 }
 
@@ -51,9 +58,43 @@ static err_t tcp_server_result(void *arg, int status) {
     return tcp_server_close(arg);
 }
 
-static err_t tcp_server_sent(void *arg, struct tcp_pcb *tpcb, u16_t len) {
-    DEBUG_printf("Sent %u bytes of data\n", len);
+static err_t tcp_send_chunk(void *arg, struct tcp_pcb *tpcb) {
+    TCP_SERVER_T *state = (TCP_SERVER_T*)arg;
+
+    if (state->send_buffer_ptr == NULL || state->send_buffer_pos >= state->send_buffer_len) {
+        return ERR_OK;
+    }
+
+    u16_t remaining = state->send_buffer_len - state->send_buffer_pos;
+    u16_t send_len = tcp_sndbuf(tpcb);
+
+    if (send_len == 0) {
+        return ERR_OK;
+    }
+
+    send_len = (send_len < remaining) ? send_len : remaining;
+
+    err_t write_err = tcp_write(tpcb, state->send_buffer_ptr + state->send_buffer_pos, send_len, TCP_WRITE_FLAG_COPY);
+    if (write_err != ERR_OK) {
+        DEBUG_printf("Failed to write chunk data, error: %d\n", write_err);
+        return tcp_server_close(arg);
+    }
+    
+    state->send_buffer_pos += send_len;
+    DEBUG_printf("Sent chunk of %u bytes, total sent: %u/%u\n", send_len, state->send_buffer_pos, state->send_buffer_len);
+
+    if (state->send_buffer_pos >= state->send_buffer_len) {
+        DEBUG_printf("Finished sending full image buffer.\n");
+        state->send_buffer_ptr = NULL;
+    }
+    
+    tcp_output(tpcb);
+
     return ERR_OK;
+}
+
+static err_t tcp_server_sent(void *arg, struct tcp_pcb *tpcb, u16_t len) {
+    return tcp_send_chunk(arg, tpcb);
 }
 
 static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
@@ -65,49 +106,38 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
     
     cyw43_arch_lwip_check();
 
-
+    // ★ 修正点2: 構造を修正。ifブロックの外にクリーンアップ処理を移動
     if (p->tot_len > 0) {
-        // 受信したペイロードの先頭1バイトをコマンドとして解釈
         char cmd = ((char*)p->payload)[0];
         DEBUG_printf("Received cmd: '%c'\n", cmd);
 
-        // 'g' (get) コマンドを受信したら画像データを送信
         if (cmd == 'g') {
-            DEBUG_printf("Sending first line of frame_buffer (%d bytes)...\n", FRAME_WIDTH);
-            
-            // frame_bufferの1行目を送信
-            // tcp_writeはバッファがいっぱいだと送信できない場合があるため、エラーチェックが重要
-            err_t write_err = tcp_write(tpcb, &frame_buffer[0], FRAME_WIDTH, TCP_WRITE_FLAG_COPY);
-            if (write_err != ERR_OK) {
-                DEBUG_printf("Failed to write frame data, error: %d\n", write_err);
-                return tcp_server_result(arg, -1);
+            const uint32_t total_size = FRAME_HEIGHT * FRAME_WIDTH;
+            DEBUG_printf("Preparing to send full frame_buffer (size: %u bytes)...\n", total_size);
+            for (int y = 0; y < FRAME_HEIGHT; y++) {
+                for (int x = 0; x < FRAME_WIDTH * 2; x++) {
+                    DEBUG_printf("%02X ", frame_buffer[y * FRAME_WIDTH + x]);
+                }
+                DEBUG_printf("\n");
             }
-            // デバッグ目的として、frame_bufferの最初の16バイトを16進数で表示
-            DEBUG_printf("Frame data (first 16 bytes): ");
-            for (int i = 0; i < 16 && i < FRAME_WIDTH; i++) {
-                    DEBUG_printf("%02X ", frame_buffer[i]);
-            }
-            DEBUG_printf("\n");
+            state->send_buffer_ptr = frame_buffer;
+            state->send_buffer_len = total_size;
+            state->send_buffer_pos = 0;
+            tcp_send_chunk(arg, tpcb);
 
-            // TCP送信バッファの内容をすぐに送信するよう指示
-            tcp_output(tpcb);
         } else if (cmd == 'p') {
             float deg = light_deg();
             DEBUG_printf("Getting light_deg value: %.2f\n", deg);
-
-            // float値を文字列に変換
             char response_buffer[32];
             int len = snprintf(response_buffer, sizeof(response_buffer), "%.2f", deg);
             
-            // 変換した文字列をクライアントに送信
             err_t write_err = tcp_write(tpcb, response_buffer, len, TCP_WRITE_FLAG_COPY);
             if (write_err != ERR_OK) {
-                DEBUG_printf("Failed to write light_deg data, error: %d\n", write_err);
                 return tcp_server_result(arg, -1);
             }
             tcp_output(tpcb);
+
         } else {
-            // 's' や 't' などのコマンドの場合は state に保存し、エコーバックする
             if (cmd == 's' || cmd == 't') {
                 state->command = cmd;
             }
@@ -115,15 +145,13 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
             DEBUG_printf("Echoing back received data.\n");
             err_t write_err = tcp_write(tpcb, p->payload, p->tot_len, TCP_WRITE_FLAG_COPY);
             if (write_err != ERR_OK) {
-                DEBUG_printf("Failed to write data for echo, error: %d\n", write_err);
                 return tcp_server_result(arg, -1);
             }
+            tcp_output(tpcb);
         }
     }
 
-    // 受信処理が完了したことをTCPスタックに通知
     tcp_recved(tpcb, p->tot_len);
-    // pbufを解放
     pbuf_free(p);
 
     return ERR_OK;
@@ -160,26 +188,22 @@ static bool tcp_server_open(void *arg) {
 
     struct tcp_pcb *pcb = tcp_new_ip_type(IPADDR_TYPE_ANY);
     if (!pcb) {
-        DEBUG_printf("failed to create pcb\n");
         return false;
     }
 
     err_t err = tcp_bind(pcb, NULL, TCP_PORT);
     if (err) {
-        DEBUG_printf("failed to bind to port %u\n", TCP_PORT);
         return false;
     }
 
     state->server_pcb = tcp_listen_with_backlog(pcb, 1);
     if (!state->server_pcb) {
-        DEBUG_printf("failed to listen\n");
         if (pcb) {
             tcp_close(pcb);
         }
         return false;
     }
 
-    // acceptコールバックを登録
     tcp_arg(state->server_pcb, state);
     tcp_accept(state->server_pcb, tcp_server_accept);
 
@@ -196,22 +220,8 @@ void run_echo_server(void) {
         return;
     }
     while(!state->complete) {
-        switch (state->command)
-        {
-            case 's':
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-                break; 
-
-            case 'g':
-                cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-                break;
-            
-            default:
-                break;
-        }
-        state->command = 0;
         cyw43_arch_poll();
-        sleep_ms(1); // CPU負荷を軽減
+        sleep_ms(1);
     }
     free(state);
 }

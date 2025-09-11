@@ -12,6 +12,9 @@ typedef struct TCP_SERVER_T_ {
     struct tcp_pcb *client_pcb;
     bool complete;
     volatile char command;
+    const uint8_t *send_buffer_ptr;
+    uint32_t send_buffer_len;
+    uint32_t send_buffer_pos;
 } TCP_SERVER_T;
 
 void run_echo_server(void);
