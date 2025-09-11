@@ -63,7 +63,7 @@ float deg = 90.0; //test
 
 void update_servo_from_light_deg(float deg, int slice_num, int channel) {
 
-
+        int counter = 0;
         while (1)
         {
         float goal = light_deg()-deg;
@@ -94,7 +94,10 @@ void update_servo_from_light_deg(float deg, int slice_num, int channel) {
             pwm_set_chan_level(slice_num, channel,1500);
             printf("1500\n");
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-            break;
+            counter++;
+            if (counter > 100) {
+                break;
+            }
         }
         if (goal >= 31 && goal <= 35) {
             pwm_set_chan_level(slice_num, channel,1400); //1500
@@ -202,7 +205,9 @@ int main()
     pwm_set_enabled(slice_num, true);
     printf("wrap=%f\n", WRAP);
 
-    // update_servo_from_light_deg(90, slice_num, channel);
+    update_servo_from_light_deg(-125, slice_num, channel);
+
+    sleep_ms(1000);
 
     capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
 
