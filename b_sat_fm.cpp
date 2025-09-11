@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
@@ -7,6 +8,10 @@
 #include "hardware/timer.h"
 #include "pico/cyw43_arch.h"
 #include "hardware/uart.h"
+#include "hardware/pwm.h"
+#include "hardware/clocks.h"
+
+#include "adc.h"
 
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
@@ -42,6 +47,14 @@ int64_t alarm_callback(alarm_id_t id, void *user_data) {
 #define UART_TX_PIN 12
 #define UART_RX_PIN 13
 
+// servo Defines
+const uint PWM_PIN = 11;
+// const uint16_t STOP_PULSE_US = 1500; // 規定値　1500us
+// const uint16_t CW_PULSE_US   = 1200; // 規定値　1500-700
+// const uint16_t CCW_PULSE_US  = 1800; // 規定値　1500-2300
+#define PWM_FREQ 400
+#define PWM_DIVIDER 125.0f
+#define WRAP ((clock_get_hz(clk_sys) / PWM_DIVIDER) / PWM_FREQ)
 
 
 int main()
@@ -51,7 +64,6 @@ int main()
     // Initialise the Wi-Fi chip
     if (cyw43_arch_init()) {
         printf("Wi-Fi init failed\n");
-        return -1;
     }
 
     // Set up our UART
@@ -106,22 +118,94 @@ int main()
     cyw43_arch_enable_sta_mode();
 
     printf("Connecting to Wi-Fi...\n");
-    if (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("failed to connect.\n");
-        return 1;
-    } else {
-        printf("Connected.\n");
-        // Read the ip address in a human readable way
-        uint8_t *ip_address = (uint8_t*)&(cyw43_state.netif[0].ip_addr.addr);
-        printf("IP address %d.%d.%d.%d\n", ip_address[0], ip_address[1], ip_address[2], ip_address[3]);
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+    while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+        printf("Failed to connect. Retrying in 5 seconds...\n");
+        sleep_ms(5000); 
     }
+    
+    // 接続成功時の処理
+    printf("Connected.\n");
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+
+    // initialize the PWM hardware
+    gpio_set_function(PWM_PIN, GPIO_FUNC_PWM);
+    uint slice_num = pwm_gpio_to_slice_num(PWM_PIN);
+    uint channel = pwm_gpio_to_channel(PWM_PIN);
+    pwm_set_clkdiv(slice_num, PWM_DIVIDER); 
+    pwm_set_wrap(slice_num, WRAP);
+    pwm_set_enabled(slice_num, true);
+    printf("wrap=%f\n", WRAP);
 
 
     
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
-
     while (true) {
-        printf("Hello, world!\n");
-        sleep_ms(1000);
+        // printf("Hello, world!\n");
+        // sleep_ms(1000);
+
+        if (light_deg() >= -180 && light_deg() <= -135) {
+            pwm_set_chan_level(slice_num, channel,1800);
+            printf("2000\n");
+        } 
+        if (light_deg() >= -134 && light_deg() <= -90) {
+            pwm_set_chan_level(slice_num, channel,1800);
+            printf("2300\n");
+        }
+        if (light_deg() >= -89 && light_deg() <= -45) {
+            pwm_set_chan_level(slice_num, channel,1200);
+            printf("700\n");
+        }
+        if (light_deg() >= -44 && light_deg() <= 0) {
+            pwm_set_chan_level(slice_num, channel,1200);
+            printf("1000\n");
+        }
+        if (light_deg() >= 1 && light_deg() <= 45) {
+            pwm_set_chan_level(slice_num, channel,1400);
+            printf("1200\n");
+        }
+        if (light_deg() >= 46 && light_deg() <= 69) {
+            pwm_set_chan_level(slice_num, channel,1400);//1400
+            printf("1400\n");
+        }
+        if (light_deg() >= 70 && light_deg() <= 110) {
+            
+            pwm_set_chan_level(slice_num, channel,1700);  
+            pwm_set_chan_level(slice_num, channel,1300);  
+            pwm_set_chan_level(slice_num, channel,1500);
+            printf("1500\n");
+        }
+        if (light_deg() >= 111 && light_deg() <= 135) {
+            pwm_set_chan_level(slice_num, channel,1600);//1650
+            printf("1650\n");
+        }
+        if (light_deg() >= 136 && light_deg() <= 180) {
+            pwm_set_chan_level(slice_num, channel,1600);
+            printf("1800\n");
+        }
+
+
+        //pwm_set_chan_level(slice_num, channel,2300);  
+        //cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        //sleep_ms(1100);
+        //pwm_set_chan_level(slice_num, channel,700);  
+        //cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+        //sleep_ms(200);
+        //pwm_set_chan_level(slice_num, channel,1600);  
+        //cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        //sleep_ms(50);
+        //pwm_set_chan_level(slice_num, channel,1500);  
+        // sleep_ms(1000);
+
+        // for (uint16_t pulse = 700; pulse <= 2300; pulse += 1) {
+        //     uint16_t level = pulse;
+        //     printf("pulse=%d level=%d\n", pulse, level);
+        //     pwm_set_chan_level(slice_num, channel, level);
+        //     sleep_ms(10);
+        // }
+
+        // print_ch_data();
+        //printf("lv=%f\n",light_deg());
+
     }
 }
