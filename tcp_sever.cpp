@@ -106,6 +106,25 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
                 return tcp_server_result(arg, -1);
             }
             tcp_output(tpcb);
+        } else if (cmd == 'd') {
+            if (p->tot_len > 1) {
+                char num_buffer[16];
+                // コマンド文字を除いた長さを計算
+                int num_len = p->tot_len - 1;
+                // バッファオーバーフローを防ぐ
+                if (num_len >= sizeof(num_buffer)) {
+                    num_len = sizeof(num_buffer) - 1;
+                }
+
+                // ペイロードから数値部分をコピー
+                memcpy(num_buffer, ((char*)p->payload) + 1, num_len);
+                // 文字列として扱うためにヌル終端する
+                num_buffer[num_len] = '\0';
+
+                // 文字列を整数に変換して変数degに代入
+                int deg = atoi(num_buffer);
+                DEBUG_printf("Converted degree value: %d\n", deg);
+            }
         } else {
             // 's' や 't' などのコマンドの場合は state に保存し、エコーバックする
             if (cmd == 's' || cmd == 't') {

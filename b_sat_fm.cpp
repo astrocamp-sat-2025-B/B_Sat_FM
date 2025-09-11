@@ -205,11 +205,11 @@ int main()
     pwm_set_enabled(slice_num, true);
     printf("wrap=%f\n", WRAP);
 
-    update_servo_from_light_deg(-125, slice_num, channel);
+    // update_servo_from_light_deg(-125, slice_num, channel);
 
     sleep_ms(1000);
 
-    capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
+    // capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
 
     run_echo_server();
 
