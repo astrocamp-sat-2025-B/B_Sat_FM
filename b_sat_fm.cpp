@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
@@ -13,6 +14,7 @@
 
 #include "adc.h"
 #include "camera.h"
+#include "tcp_sever.h"
 
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
@@ -61,7 +63,7 @@ float deg = 90.0; //test
 
 void update_servo_from_light_deg(float deg, int slice_num, int channel) {
 
-
+        int counter = 0;
         while (1)
         {
         float goal = light_deg()-deg;
@@ -92,7 +94,10 @@ void update_servo_from_light_deg(float deg, int slice_num, int channel) {
             pwm_set_chan_level(slice_num, channel,1500);
             printf("1500\n");
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-            break;
+            counter++;
+            if (counter > 100) {
+                break;
+            }
         }
         if (goal >= 31 && goal <= 35) {
             pwm_set_chan_level(slice_num, channel,1400); //1500
@@ -121,10 +126,13 @@ int main()
 {
     stdio_init_all();
 
-    // Initialise the Wi-Fi chip
     if (cyw43_arch_init()) {
-        printf("Wi-Fi init failed\n");
+        printf("failed to initialise\n");
+        return 1;
     }
+
+    init_i2c();
+    init_camera_settings();
 
     // Set up our UART
     uart_init(UART_ID, BAUD_RATE);
@@ -176,16 +184,16 @@ int main()
 
     // Enable wifi station
     cyw43_arch_enable_sta_mode();
-
     printf("Connecting to Wi-Fi...\n");
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-    // while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-    //     printf("Failed to connect. Retrying in 5 seconds...\n");
-    //     sleep_ms(5000); 
-    // }
+    while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+        printf("Failed to connect. Retrying in 5 seconds...\n");
+        sleep_ms(5000); 
+    }
     
     // 接続成功時の処理
     printf("Connected.\n");
+
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
 
     // initialize the PWM hardware
@@ -196,11 +204,17 @@ int main()
     pwm_set_wrap(slice_num, WRAP);
     pwm_set_enabled(slice_num, true);
     printf("wrap=%f\n", WRAP);
-  
-    update_servo_from_light_deg(90, slice_num, channel);
+
+    update_servo_from_light_deg(-125, slice_num, channel);
+
+    sleep_ms(1000);
+
+    capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
+
+    run_echo_server();
+
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
     while (true) {
-        
        // pwm_set_chan_level(slice_num, channel,2300);  
        // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
        // sleep_ms(1100);
@@ -221,6 +235,7 @@ int main()
        //  }
 
         //  print_ch_data();
+        // printf("lv=%f\n",light_deg());
         //test_pwm(slice_num, channel);
         //sleep_ms(1000);
 
