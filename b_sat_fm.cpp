@@ -60,45 +60,62 @@ const uint PWM_PIN = 11;
 float deg = 90.0; //test
 
 void update_servo_from_light_deg(float deg, int slice_num, int channel) {
+
+
+        while (1)
+        {
         float goal = light_deg()-deg;
         printf("goal=%f\n", goal);
+        
         if (goal >= -180 && goal <= -90) {
-            pwm_set_chan_level(slice_num, channel,1800);// 1800
+            pwm_set_chan_level(slice_num, channel,2300);// 1800
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-            printf("1800\n");
+            printf("2300\n");
         }
         if (goal >= -89 && goal <= -45) {
-            pwm_set_chan_level(slice_num, channel,1700); //1700
+            pwm_set_chan_level(slice_num, channel,2100); //1700
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-            printf("1700\n");
+            printf("2100\n");
         }
-        if (goal >= -44 && goal <= -21) {
-            pwm_set_chan_level(slice_num, channel,1600); //1600
+        if (goal >= -44 && goal <= -36) {
+            pwm_set_chan_level(slice_num, channel,1900); //1600
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             printf("1600\n");
         }
-        if (goal >= -20 && goal <= 20) {
-            pwm_set_chan_level(slice_num, channel,1500);
+        if (goal >= -31 && goal <= -35) {
+            pwm_set_chan_level(slice_num, channel,1600); //1500
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             printf("1500\n");
         }
-        if (goal >= 21 && goal <= 45) {
-            pwm_set_chan_level(slice_num, channel,1400); //1400
+        // -20 to 20 is stop
+        if (goal >= -30 && goal <= 30) {
+            pwm_set_chan_level(slice_num, channel,1500);
+            printf("1500\n");
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+            break;
+        }
+        if (goal >= 31 && goal <= 35) {
+            pwm_set_chan_level(slice_num, channel,1400); //1500
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             printf("1400\n");
         }
-        if (goal >= 46 && goal <= 90) {
-            pwm_set_chan_level(slice_num, channel,1300);// 1300
+        if (goal >= 36 && goal <= 45) {
+            pwm_set_chan_level(slice_num, channel,900); //1400
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-            printf("1300\n"); 
+            printf("900\n");
+        }
+        if (goal >= 46 && goal <= 90) {
+            pwm_set_chan_level(slice_num, channel,800);// 1300
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            printf("800\n"); 
         }
         if (goal >= 91 && goal <= 180) {
-            pwm_set_chan_level(slice_num, channel,1200); //1200
+            pwm_set_chan_level(slice_num, channel,700); //1200
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-            printf("1200\n");
+            printf("700\n");
         }
     }
-
+}
 
 int main()
 {
@@ -162,10 +179,10 @@ int main()
 
     printf("Connecting to Wi-Fi...\n");
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-    while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("Failed to connect. Retrying in 5 seconds...\n");
-        sleep_ms(5000); 
-    }
+    // while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+    //     printf("Failed to connect. Retrying in 5 seconds...\n");
+    //     sleep_ms(5000); 
+    // }
     
     // 接続成功時の処理
     printf("Connected.\n");
@@ -179,15 +196,11 @@ int main()
     pwm_set_wrap(slice_num, WRAP);
     pwm_set_enabled(slice_num, true);
     printf("wrap=%f\n", WRAP);
-
-
-
+  
+    update_servo_from_light_deg(90, slice_num, channel);
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
     while (true) {
-        update_servo_from_light_deg(90, slice_num, channel);
-
-
-
+        
        // pwm_set_chan_level(slice_num, channel,2300);  
        // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
        // sleep_ms(1100);
@@ -207,8 +220,7 @@ int main()
        //      sleep_ms(10);
        //  }
 
-         print_ch_data();
-        printf("lv=%f\n",light_deg());
+        //  print_ch_data();
         //test_pwm(slice_num, channel);
         //sleep_ms(1000);
 
