@@ -1,5 +1,6 @@
 #include "tcp_sever.h"
 #include "camera.h"
+#include "adc.h"
 
 #define TCP_PORT 4242
 #define DEBUG_printf printf
@@ -90,7 +91,21 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
 
             // TCP送信バッファの内容をすぐに送信するよう指示
             tcp_output(tpcb);
+        } else if (cmd == 'p') {
+            float deg = light_deg();
+            DEBUG_printf("Getting light_deg value: %.2f\n", deg);
 
+            // float値を文字列に変換
+            char response_buffer[32];
+            int len = snprintf(response_buffer, sizeof(response_buffer), "%.2f", deg);
+            
+            // 変換した文字列をクライアントに送信
+            err_t write_err = tcp_write(tpcb, response_buffer, len, TCP_WRITE_FLAG_COPY);
+            if (write_err != ERR_OK) {
+                DEBUG_printf("Failed to write light_deg data, error: %d\n", write_err);
+                return tcp_server_result(arg, -1);
+            }
+            tcp_output(tpcb);
         } else {
             // 's' や 't' などのコマンドの場合は state に保存し、エコーバックする
             if (cmd == 's' || cmd == 't') {
