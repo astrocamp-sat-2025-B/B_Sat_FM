@@ -126,6 +126,8 @@ int main()
 {
     stdio_init_all();
 
+    sleep_ms(2000);
+
     if (cyw43_arch_init()) {
         printf("failed to initialise\n");
         return 1;
@@ -205,13 +207,11 @@ int main()
     pwm_set_enabled(slice_num, true);
     printf("wrap=%f\n", WRAP);
 
-    update_servo_from_light_deg(-125, slice_num, channel);
-
     sleep_ms(1000);
 
     capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
 
-    run_echo_server();
+    run_echo_server(&slice_num, &channel, -125);
 
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
     while (true) {

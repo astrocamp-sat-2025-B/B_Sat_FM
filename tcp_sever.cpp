@@ -1,6 +1,7 @@
 #include "tcp_sever.h"
 #include "camera.h"
 #include "adc.h"
+#include "hardware/pwm.h"
 
 #define TCP_PORT 4242
 #define DEBUG_printf printf
@@ -186,7 +187,7 @@ static bool tcp_server_open(void *arg) {
     return true;
 }
 
-void run_echo_server(void) {
+void run_echo_server(uint * slice_num, uint *channel, float deg) {
     TCP_SERVER_T *state = tcp_server_init();
     if (!state) {
         return;
@@ -195,6 +196,7 @@ void run_echo_server(void) {
         tcp_server_result(state, -1);
         return;
     }
+    int counter = 0;
     while(!state->complete) {
         switch (state->command)
         {
@@ -209,6 +211,61 @@ void run_echo_server(void) {
             default:
                 break;
         }
+
+        // float goal = light_deg()-deg;
+        // printf("goal=%f\n", goal);
+        
+        if (light_deg() >= -180-deg && light_deg() <= -90-deg) {
+            pwm_set_chan_level(*slice_num, *channel,2300);// 1800
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            // printf("2300\n");
+        }
+        if (light_deg() >= -89-deg && light_deg() <= -45-deg) {
+            pwm_set_chan_level(*slice_num, *channel,2100); //1700
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            // printf("2100\n");
+        }
+        if (light_deg() >= -44-deg && light_deg() <= -36-deg) {
+            pwm_set_chan_level(*slice_num, *channel,1900); //1600
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            // printf("1600\n");
+        }
+        if (light_deg() >= -31-deg && light_deg() <= -35-deg) {
+            pwm_set_chan_level(*slice_num, *channel,1600); //1500
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            // printf("1500\n");
+        }
+        // -20 to 20 is stop
+        if (light_deg() >= -30-deg && light_deg() <= 30-deg) {
+            pwm_set_chan_level(*slice_num, *channel,1500);
+            // printf("1500\n");
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+            counter++;
+            if (counter > 100) {
+                
+            }
+        }
+        if (light_deg() >= 31-deg && light_deg() <= 35-deg) {
+            pwm_set_chan_level(*slice_num, *channel,1400); //1500
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            // printf("1400\n");
+        }
+        if (light_deg() >= 36-deg && light_deg() <= 45-deg) {
+            pwm_set_chan_level(*slice_num, *channel,900); //1400
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            // printf("900\n");
+        }
+        if (light_deg() >= 46-deg && light_deg() <= 90-deg) {
+            pwm_set_chan_level(*slice_num, *channel,800);// 1300
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            // printf("800\n"); 
+        }
+        if (light_deg() >= 91-deg && light_deg() <= 180-deg) {
+            pwm_set_chan_level(*slice_num, *channel,700); //1200
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            // printf("700\n");
+        }
+        
         state->command = 0;
         cyw43_arch_poll();
         sleep_ms(1); // CPU負荷を軽減
