@@ -9,6 +9,7 @@ static TCP_SERVER_T* tcp_server_init(void) {
         DEBUG_printf("failed to allocate state\n");
         return NULL;
     }
+    state->command = 0;
     return state;
 }
 
@@ -54,6 +55,7 @@ static err_t tcp_server_sent(void *arg, struct tcp_pcb *tpcb, u16_t len) {
 }
 
 static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
+    TCP_SERVER_T *state = (TCP_SERVER_T*)arg;
     if (!p) {
         DEBUG_printf("Client disconnected\n");
         return tcp_server_close(arg);
@@ -62,7 +64,13 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
     cyw43_arch_lwip_check();
 
     if (p->tot_len > 0) {
-        DEBUG_printf("Received %d bytes\n", p->tot_len);
+        char data = ((char*)p->payload)[0];
+        DEBUG_printf("Received cmd: %c\n", data);
+
+        if (data == 's'|| data == 'g' || data == 't')
+        {
+            state->command = data;
+        }
 
         err_t write_err = tcp_write(tpcb, p->payload, p->tot_len, TCP_WRITE_FLAG_COPY);
         if (write_err != ERR_OK) {
@@ -153,7 +161,20 @@ void run_echo_server(void) {
         return;
     }
     while(!state->complete) {
-        
+        switch (state->command)
+        {
+            case 's':
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+                break; 
+
+            case 'g':
+                cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+                break;
+            
+            default:
+                break;
+        }
+        state->command = 0;
         cyw43_arch_poll();
         sleep_ms(1); // CPU負荷を軽減
     }

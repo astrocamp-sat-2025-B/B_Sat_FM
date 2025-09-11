@@ -11,6 +11,7 @@ typedef struct TCP_SERVER_T_ {
     struct tcp_pcb *server_pcb;
     struct tcp_pcb *client_pcb;
     bool complete;
+    volatile char command;
 } TCP_SERVER_T;
 
 void run_echo_server(void);
