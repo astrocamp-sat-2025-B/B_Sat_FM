@@ -12,6 +12,7 @@
 #include "hardware/clocks.h"
 
 #include "adc.h"
+#include "camera.h"
 
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
@@ -180,7 +181,7 @@ int main()
     printf("wrap=%f\n", WRAP);
 
 
-    
+
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
     while (true) {
         update_servo_from_light_deg(90, slice_num, channel);
