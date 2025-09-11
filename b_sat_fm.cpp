@@ -121,7 +121,7 @@ int main()
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
     while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
         printf("Failed to connect. Retrying in 5 seconds...\n");
-        sleep_ms(5000); // 5秒待機
+        sleep_ms(5000); 
     }
     
     // 接続成功時の処理
@@ -132,7 +132,7 @@ int main()
     gpio_set_function(PWM_PIN, GPIO_FUNC_PWM);
     uint slice_num = pwm_gpio_to_slice_num(PWM_PIN);
     uint channel = pwm_gpio_to_channel(PWM_PIN);
-    pwm_set_clkdiv(slice_num, PWM_DIVIDER); //ここのあたりを理解
+    pwm_set_clkdiv(slice_num, PWM_DIVIDER); 
     pwm_set_wrap(slice_num, WRAP);
     pwm_set_enabled(slice_num, true);
     printf("wrap=%f\n", WRAP);
