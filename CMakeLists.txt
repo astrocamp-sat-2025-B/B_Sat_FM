@@ -37,7 +37,9 @@ pico_sdk_init()
 
 add_executable(b_sat_fm
  b_sat_fm.cpp
- adc.cpp )
+ adc.cpp
+ camera.cpp
+ )
 
 pico_set_program_name(b_sat_fm "b_sat_fm")
 pico_set_program_version(b_sat_fm "0.1")
@@ -46,8 +48,8 @@ pico_set_program_version(b_sat_fm "0.1")
 pico_generate_pio_header(b_sat_fm ${CMAKE_CURRENT_LIST_DIR}/blink.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(b_sat_fm 1)
-pico_enable_stdio_usb(b_sat_fm 0)
+pico_enable_stdio_uart(b_sat_fm 0)
+pico_enable_stdio_usb(b_sat_fm 1)
 
 # Add the standard library to the build
 target_link_libraries(b_sat_fm
