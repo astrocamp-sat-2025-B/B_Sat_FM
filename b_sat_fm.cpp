@@ -80,14 +80,14 @@ void update_servo_from_light_deg(float deg, int slice_num, int channel) {
             printf("2100\n");
         }
         if (goal >= -44 && goal <= -36) {
-            pwm_set_chan_level(slice_num, channel,1900); //1600
+            pwm_set_chan_level(slice_num, channel,1900);
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-            printf("1600\n");
+            printf("1900\n");
         }
         if (goal >= -31 && goal <= -35) {
-            pwm_set_chan_level(slice_num, channel,1600); //1500
+            pwm_set_chan_level(slice_num, channel,1600);
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-            printf("1500\n");
+            printf("1600\n");
         }
         // -20 to 20 is stop
         if (goal >= -30 && goal <= 30) {
@@ -100,22 +100,22 @@ void update_servo_from_light_deg(float deg, int slice_num, int channel) {
             }
         }
         if (goal >= 31 && goal <= 35) {
-            pwm_set_chan_level(slice_num, channel,1400); //1500
+            pwm_set_chan_level(slice_num, channel,1400);
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             printf("1400\n");
         }
         if (goal >= 36 && goal <= 45) {
-            pwm_set_chan_level(slice_num, channel,900); //1400
+            pwm_set_chan_level(slice_num, channel,900);
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             printf("900\n");
         }
         if (goal >= 46 && goal <= 90) {
-            pwm_set_chan_level(slice_num, channel,800);// 1300
+            pwm_set_chan_level(slice_num, channel,800);
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             printf("800\n"); 
         }
         if (goal >= 91 && goal <= 180) {
-            pwm_set_chan_level(slice_num, channel,700); //1200
+            pwm_set_chan_level(slice_num, channel,700); 
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             printf("700\n");
         }
