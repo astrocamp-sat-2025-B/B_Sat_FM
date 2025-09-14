@@ -6,6 +6,8 @@
 #define TCP_PORT 4242
 #define DEBUG_printf printf
 
+int goal_deg = -125;
+
 static TCP_SERVER_T* tcp_server_init(void) {
     TCP_SERVER_T *state = (TCP_SERVER_T*)calloc(1, sizeof(TCP_SERVER_T));
     if (!state) {
@@ -123,8 +125,8 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
                 num_buffer[num_len] = '\0';
 
                 // 文字列を整数に変換して変数degに代入
-                int deg = atoi(num_buffer);
-                DEBUG_printf("Converted degree value: %d\n", deg);
+                goal_deg = atoi(num_buffer);
+                DEBUG_printf("Converted degree value: %d\n", goal_deg);
             }
         } else {
             // 's' や 't' などのコマンドの場合は state に保存し、エコーバックする
@@ -206,7 +208,7 @@ static bool tcp_server_open(void *arg) {
     return true;
 }
 
-void run_echo_server(uint * slice_num, uint *channel, float deg) {
+void run_echo_server(uint * slice_num, uint *channel) {
     TCP_SERVER_T *state = tcp_server_init();
     if (!state) {
         return;
@@ -234,28 +236,28 @@ void run_echo_server(uint * slice_num, uint *channel, float deg) {
         // float goal = light_deg()-deg;
         // printf("goal=%f\n", goal);
         
-        if (light_deg() >= -180-deg && light_deg() <= -90-deg) {
+        if (light_deg() >= -180-goal_deg && light_deg() <= -90-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,2300);// 1800
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             // printf("2300\n");
         }
-        if (light_deg() >= -89-deg && light_deg() <= -45-deg) {
+        if (light_deg() >= -89-goal_deg && light_deg() <= -45-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,2100); //1700
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             // printf("2100\n");
         }
-        if (light_deg() >= -44-deg && light_deg() <= -36-deg) {
+        if (light_deg() >= -44-goal_deg && light_deg() <= -36-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,1900); //1600
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             // printf("1600\n");
         }
-        if (light_deg() >= -31-deg && light_deg() <= -35-deg) {
+        if (light_deg() >= -31-goal_deg && light_deg() <= -35-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,1600); //1500
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             // printf("1500\n");
         }
         // -20 to 20 is stop
-        if (light_deg() >= -30-deg && light_deg() <= 30-deg) {
+        if (light_deg() >= -30-goal_deg && light_deg() <= 30-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,1500);
             // printf("1500\n");
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
@@ -264,22 +266,22 @@ void run_echo_server(uint * slice_num, uint *channel, float deg) {
                 
             }
         }
-        if (light_deg() >= 31-deg && light_deg() <= 35-deg) {
+        if (light_deg() >= 31-goal_deg && light_deg() <= 35-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,1400); //1500
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             // printf("1400\n");
         }
-        if (light_deg() >= 36-deg && light_deg() <= 45-deg) {
+        if (light_deg() >= 36-goal_deg && light_deg() <= 45-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,900); //1400
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             // printf("900\n");
         }
-        if (light_deg() >= 46-deg && light_deg() <= 90-deg) {
+        if (light_deg() >= 46-goal_deg && light_deg() <= 90-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,800);// 1300
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             // printf("800\n"); 
         }
-        if (light_deg() >= 91-deg && light_deg() <= 180-deg) {
+        if (light_deg() >= 91-goal_deg && light_deg() <= 180-goal_deg) {
             pwm_set_chan_level(*slice_num, *channel,700); //1200
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             // printf("700\n");

@@ -188,7 +188,7 @@ int main()
     cyw43_arch_enable_sta_mode();
     printf("Connecting to Wi-Fi...\n");
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-    while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414e", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+    while (cyw43_arch_wifi_connect_timeout_ms("SPWH_L12_5b414", "0f15b502ac61d", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
         printf("Failed to connect. Retrying in 5 seconds...\n");
         sleep_ms(5000); 
     }
@@ -209,9 +209,9 @@ int main()
 
     sleep_ms(1000);
 
-    // capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
+    capture_and_send_frame(CameraOutputFormat::YUV_YUYV, frame_buffer, FRAME_WIDTH, FRAME_HEIGHT);
 
-    run_echo_server(&slice_num, &channel, -125);
+    run_echo_server(&slice_num, &channel);
 
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
     while (true) {

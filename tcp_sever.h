@@ -14,6 +14,6 @@ typedef struct TCP_SERVER_T_ {
     volatile char command;
 } TCP_SERVER_T;
 
-void run_echo_server(uint * slice_num, uint *channel, float deg);
+void run_echo_server(uint * slice_num, uint *channel);
 
 #endif // TCP_SERVER_H
